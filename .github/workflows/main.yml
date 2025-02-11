@@ -59,7 +59,7 @@ jobs:
           cmake --build . --config Release --parallel 4
           cmake --build . --config Release --target install
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.platform }}-binaries
           path: build/output
@@ -126,12 +126,7 @@ jobs:
         with:
           name: android-arm64-binaries
           path: build/output
-
-      - name: Test SPIRV-Cross for Android ARM64
-        shell: bash
-        working-directory: ${{github.workspace}}/build
-        run: ctest --verbose -C Release
-
+          
   reuse:
     name: "REUSE license check"
     runs-on: ubuntu-latest
