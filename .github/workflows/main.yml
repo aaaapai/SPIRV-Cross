@@ -59,7 +59,7 @@ jobs:
           cmake --build . --config Release --parallel 4
           cmake --build . --config Release --target install
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.platform }}-binaries
           path: build/output
@@ -113,7 +113,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DSPIRV_CROSS_WERROR=ON -DSPIRV_CROSS_MISC_WARNINGS=ON -DSPIRV_CROSS_SHARED=ON -DCMAKE_INSTALL_PREFIX=output -DCMAKE_BUILD_TYPE=Release -DSPIRV_CROSS_ENABLE_TESTS=ON -DCMAKE_TOOLCHAIN_FILE=/path/to/android-ndk/toolchain-arm64-v8a.cmake
+          cmake .. -DSPIRV_CROSS_WERROR=ON -DSPIRV_CROSS_MISC_WARNINGS=ON -DSPIRV_CROSS_SHARED=ON -DCMAKE_INSTALL_PREFIX=output -DCMAKE_BUILD_TYPE=Release -DSPIRV_CROSS_ENABLE_TESTS=ON -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/path/to/your/android-ndk/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-21
 
       - name: Build SPIRV-Cross for Android ARM64
         shell: bash
@@ -122,11 +122,16 @@ jobs:
           cmake --build . --config Release --parallel 4
           cmake --build . --config Release --target install
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         with:
           name: android-arm64-binaries
           path: build/output
-          
+
+      - name: Test SPIRV-Cross for Android ARM64
+        shell: bash
+        working-directory: ${{github.workspace}}/build
+        run: ctest --verbose -C Release
+
   reuse:
     name: "REUSE license check"
     runs-on: ubuntu-latest
