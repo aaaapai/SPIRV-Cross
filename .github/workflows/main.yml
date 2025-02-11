@@ -18,8 +18,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Setup JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
       - name: Setup Android NDK
-        uses: android-actions/setup-android-ndk@v1
+        uses: android-actions/setup-android@v2
         with:
           ndk-version: ${{ env.ANDROID_NDK_VERSION }}
 
@@ -45,9 +51,9 @@ jobs:
         shell: bash
         working-directory: ${{github.workspace}}
         run: |
-          export ANDROID_NDK=$ANDROID_NDK_HOME
+          export ANDROID_NDK=$ANDROID_NDK_ROOT
           ./build_glslang_spirv_tools.sh \
-            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake \
+            -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK}/build/cmake/android.toolchain.cmake \
             -DANDROID_ABI=${{ env.ANDROID_ABI }} \
             -DANDROID_STL=${{ env.ANDROID_STL }} \
             -DANDROID_NATIVE_API_LEVEL=21 \
@@ -59,7 +65,7 @@ jobs:
           mkdir build-android
           cd build-android
           cmake .. \
-            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+            -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_ROOT}/build/cmake/android.toolchain.cmake \
             -DANDROID_ABI=${{ env.ANDROID_ABI }} \
             -DANDROID_STL=${{ env.ANDROID_STL }} \
             -DANDROID_NATIVE_API_LEVEL=21 \
@@ -68,7 +74,7 @@ jobs:
             -DSPIRV_CROSS_SHARED=ON \
             -DCMAKE_INSTALL_PREFIX=output \
             -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_SHARED_LIBS=OFF
+            -DBUILD_SHARED_LIBS=ON
 
       - name: Build SPIRV-Cross
         shell: bash
