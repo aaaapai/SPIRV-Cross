@@ -50,7 +50,7 @@ option(SPIRV_CROSS_ENABLE_REFLECT "Enable JSON reflection target support." ON)
 option(SPIRV_CROSS_ENABLE_C_API "Enable C API wrapper support in static library." OFF)
 option(SPIRV_CROSS_ENABLE_UTIL "Enable util module support." ON)
 
-option(SPIRV_CROSS_SANITIZE_ADDRESS "Sanitize address" ON)
+option(SPIRV_CROSS_SANITIZE_ADDRESS "Sanitize address" OFF)
 option(SPIRV_CROSS_SANITIZE_MEMORY "Sanitize memory" ON)
 option(SPIRV_CROSS_SANITIZE_THREADS "Sanitize threads" ON)
 option(SPIRV_CROSS_SANITIZE_UNDEFINED "Sanitize undefined" ON)
