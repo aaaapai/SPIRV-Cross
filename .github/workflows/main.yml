@@ -25,7 +25,6 @@ jobs:
         uses: actions/cache@main
         with:
           path: external/*-build/output
-          key: ${{ matrix.platform }} externals ${{ hashFiles('checkout_glslang_spirv_tools.sh', 'build_glslang_spirv_tools.sh') }}
 
       - name: Pull glslang / SPIRV-Tools
         if: steps.cache-externals.outputs.cache-hit != 'true'
