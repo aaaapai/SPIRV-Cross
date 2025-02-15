@@ -22,7 +22,6 @@ jobs:
       - uses: actions/checkout@main
 
       - name: Cache glslang / SPIRV-Tools
-        id: cache-externals
         uses: actions/cache@main
         with:
           path: external/*-build/output
