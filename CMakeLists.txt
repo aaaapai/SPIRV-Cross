@@ -71,9 +71,9 @@ if(${CMAKE_GENERATOR} MATCHES "Makefile")
 	endif()
 endif()
 
-set(spirv-compiler-options "")
+set(spirv-compiler-options "-O3 -fPIC -DPIC -flto=thin -fwhole-program-vtables -mllvm -polly -pthread -Wall -Weverything -std=c2x -fno-emulated-tls -march=armv8-a+simd+crc+crypto+fp16 -mcpu=cortex-a76 -fdata-sections -ffunction-sections -fmerge-all-constants")
 set(spirv-compiler-defines "")
-set(spirv-cross-link-flags "-fuse-ld=lld -flto=thin")
+set(spirv-cross-link-flags "-fuse-ld=lld -flto=thin -Wl,-plugin-opt=-emulated-tls=0")
 
 message(STATUS "SPIRV-Cross: Finding Git version for SPIRV-Cross.")
 set(spirv-cross-build-version "unknown")
