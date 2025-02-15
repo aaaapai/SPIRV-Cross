@@ -135,8 +135,8 @@ if (CMAKE_COMPILER_IS_GNUCXX OR ((${CMAKE_CXX_COMPILER_ID} MATCHES "Clang") AND 
 	endif()
 
 	if (SPIRV_CROSS_SANITIZE_MEMORY)
-		set(spirv-compiler-options ${spirv-compiler-options} -fsanitize=memory)
-		set(spirv-cross-link-flags "${spirv-cross-link-flags} -fsanitize=memory")
+		set(spirv-compiler-options ${spirv-compiler-options})
+		set(spirv-cross-link-flags "${spirv-cross-link-flags}")
 	endif()
 
 	if (SPIRV_CROSS_SANITIZE_THREADS)
