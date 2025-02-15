@@ -63,7 +63,7 @@ option(SPIRV_CROSS_SKIP_INSTALL "Skips installation targets." OFF)
 option(SPIRV_CROSS_WERROR "Fail build on warnings." OFF)
 option(SPIRV_CROSS_MISC_WARNINGS "Misc warnings useful for Travis runs." OFF)
 
-option(SPIRV_CROSS_FORCE_PIC "Force position-independent code for all targets." OFF)
+option(SPIRV_CROSS_FORCE_PIC "Force position-independent code for all targets." ON)
 
 if(${CMAKE_GENERATOR} MATCHES "Makefile")
 	if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
@@ -71,7 +71,7 @@ if(${CMAKE_GENERATOR} MATCHES "Makefile")
 	endif()
 endif()
 
-set(spirv-compiler-options "-O3 -fPIC -DPIC -flto=thin -fwhole-program-vtables -mllvm -polly -pthread -Wall -Weverything -std=c2x -fno-emulated-tls -march=armv8-a+simd+crc+crypto+fp16 -mcpu=cortex-a76 -fdata-sections -ffunction-sections -fmerge-all-constants")
+set(spirv-compiler-options "-O3 -fPIC -DPIC -flto=thin -fwhole-program-vtables -mllvm -polly -pthread -Wall -fno-emulated-tls -march=armv8-a+simd+crc+crypto+fp16 -mcpu=cortex-a76 -fdata-sections -ffunction-sections -fmerge-all-constants")
 set(spirv-compiler-defines "")
 set(spirv-cross-link-flags "-fuse-ld=lld -flto=thin -Wl,-plugin-opt=-emulated-tls=0")
 
