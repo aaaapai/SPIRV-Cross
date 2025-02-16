@@ -22,8 +22,9 @@
 cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
-
+set(CMAKE_C_FLAGS "-O3 -fPIC -DPIC -flto=thin -fwhole-program-vtables -mllvm -polly -pthread -Wall -fno-emulated-tls -march=armv8-a+simd+crc+crypto+fp16 -mcpu=cortex-a76 -fdata-sections -ffunction-sections -fmerge-all-constants -DNDEBUG")
+set(CMAKE_CXX_FLAGS "-O3 -fPIC -DPIC -flto=thin -fwhole-program-vtables -mllvm -polly -pthread -Wall -fno-emulated-tls -march=armv8-a+simd+crc+crypto+fp16 -mcpu=cortex-a76 -fdata-sections -ffunction-sections -fmerge-all-constants -DNDEBUG")
+set(LINK_FLAGS "-fuse-ld=lld -flto=thin -Wl,-plugin-opt=-emulated-tls=0")
 # Avoid a warning if parent project sets VERSION in project().
 if (${CMAKE_VERSION} VERSION_GREATER "3.0.1")
 	cmake_policy(SET CMP0048 NEW)
@@ -72,9 +73,9 @@ if(${CMAKE_GENERATOR} MATCHES "Makefile")
 	endif()
 endif()
 
-set(spirv-compiler-options "-flto=thin -fwhole-program-vtables -mllvm -polly -pthread -Wall -fno-emulated-tls -march=armv8-a+simd+crc+crypto+fp16 -mcpu=cortex-a76 -fdata-sections -ffunction-sections -fmerge-all-constants")
+set(spirv-compiler-options "")
 set(spirv-compiler-defines "")
-set(spirv-cross-link-flags "-fuse-ld=lld -flto=thin -Wl,-plugin-opt=-emulated-tls=0")
+set(spirv-cross-link-flags "")
 
 message(STATUS "SPIRV-Cross: Finding Git version for SPIRV-Cross.")
 set(spirv-cross-build-version "unknown")
