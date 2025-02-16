@@ -22,6 +22,7 @@
 cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 # Avoid a warning if parent project sets VERSION in project().
 if (${CMAKE_VERSION} VERSION_GREATER "3.0.1")
@@ -71,7 +72,7 @@ if(${CMAKE_GENERATOR} MATCHES "Makefile")
 	endif()
 endif()
 
-set(spirv-compiler-options "")
+set(spirv-compiler-options "-flto=thin -fwhole-program-vtables -mllvm -polly -pthread -Wall -fno-emulated-tls -march=armv8-a+simd+crc+crypto+fp16 -mcpu=cortex-a76 -fdata-sections -ffunction-sections -fmerge-all-constants")
 set(spirv-compiler-defines "")
 set(spirv-cross-link-flags "-fuse-ld=lld -flto=thin -Wl,-plugin-opt=-emulated-tls=0")
 
