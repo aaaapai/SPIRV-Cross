@@ -46,7 +46,7 @@ option(SPIRV_CROSS_ENABLE_TESTS "Enable SPIRV-Cross tests." OFF)
 
 option(SPIRV_CROSS_ENABLE_GLSL "Enable GLSL support." ON)
 option(SPIRV_CROSS_ENABLE_HLSL "Enable HLSL target support." ON)
-option(SPIRV_CROSS_ENABLE_MSL "Enable MSL target support." OFF)
+option(SPIRV_CROSS_ENABLE_MSL "Enable MSL target support." ON)
 option(SPIRV_CROSS_ENABLE_CPP "Enable C++ target support." ON)
 option(SPIRV_CROSS_ENABLE_REFLECT "Enable JSON reflection target support." ON)
 option(SPIRV_CROSS_ENABLE_C_API "Enable C API wrapper support in static library." ON)
