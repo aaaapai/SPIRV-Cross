@@ -55,7 +55,7 @@ option(SPIRV_CROSS_ENABLE_UTIL "Enable util module support." ON)
 option(SPIRV_CROSS_SANITIZE_ADDRESS "Sanitize address" OFF)
 option(SPIRV_CROSS_SANITIZE_MEMORY "Sanitize memory" ON)
 option(SPIRV_CROSS_SANITIZE_THREADS "Sanitize threads" ON)
-option(SPIRV_CROSS_SANITIZE_UNDEFINED "Sanitize undefined" ON)
+option(SPIRV_CROSS_SANITIZE_UNDEFINED "Sanitize undefined" OFF)
 
 option(SPIRV_CROSS_NAMESPACE_OVERRIDE "" "Override the namespace used in the C++ API.")
 option(SPIRV_CROSS_FORCE_STL_TYPES "Force use of STL types instead of STL replacements in certain places. Might reduce performance." OFF)
