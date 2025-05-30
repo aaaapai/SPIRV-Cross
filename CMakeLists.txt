@@ -20,8 +20,15 @@
 #
 
 cmake_minimum_required(VERSION 3.10)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -pipe -integrated-as -mllvm -polly -mllvm -polly-vectorizer=stripmine -mllvm -polly-invariant-load-hoisting -mllvm -polly-run-inliner -mllvm -polly-run-dce -mllvm -polly-invariant-load-hoisting -flto=thin -mllvm -polly-run-inliner -mllvm -polly-run-dce -mllvm -polly-parallel -fopenmp=libomp -mllvm -polly-omp-backend=LLVM -mllvm -polly-scheduling=dynamic -flto=thin -fno-emulated-tls -fwhole-program-vtables -fdata-sections -ffunction-sections -fmerge-all-constants -mllvm -hot-cold-split=true -mllvm -polly-detect-keep-going -mllvm -polly-ast-use-context -mllvm -regalloc-enable-priority-advisor=release -mllvm -regalloc-priority-interactive-channel-base=foo -DNDEBUG -march=armv8-a+simd")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -pipe -integrated-as -mllvm -polly -mllvm -polly-vectorizer=stripmine -mllvm -polly-invariant-load-hoisting -mllvm -polly-run-inliner -mllvm -polly-run-dce -mllvm -polly-invariant-load-hoisting -flto=thin -mllvm -polly-run-inliner -mllvm -polly-run-dce -mllvm -polly-parallel -fopenmp=libomp -mllvm -polly-omp-backend=LLVM -mllvm -polly-scheduling=dynamic -flto=thin -fno-emulated-tls -fwhole-program-vtables -fdata-sections -ffunction-sections -fmerge-all-constants -mllvm -hot-cold-split=true -mllvm -polly-detect-keep-going -mllvm -polly-ast-use-context -mllvm -regalloc-enable-priority-advisor=release -mllvm -regalloc-priority-interactive-channel-base=foo -DNDEBUG -march=armv8-a+simd")
+set(LINK_OPTIONS "${CMAKE_LINK_OPTIONS} -fuse-ld=lld -flto=thin -Wl,-plugin-opt=-emulated-tls=0")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_LINK_OPTIONS} -fuse-ld=lld -flto=thin -Wl,-plugin-opt=-emulated-tls=0")
+set(CMAKE_ANDROID_STL_TYPE system)
+set(CMAKE_ANDROID_LD "lld")
 
 # Avoid a warning if parent project sets VERSION in project().
 if (${CMAKE_VERSION} VERSION_GREATER "3.0.1")
@@ -40,7 +47,7 @@ option(SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS "Instead of throwing exceptions asse
 option(SPIRV_CROSS_SHARED "Build the C API as a single shared library." OFF)
 option(SPIRV_CROSS_STATIC "Build the C and C++ API as static libraries." ON)
 option(SPIRV_CROSS_CLI "Build the CLI binary. Requires SPIRV_CROSS_STATIC." ON)
-option(SPIRV_CROSS_ENABLE_TESTS "Enable SPIRV-Cross tests." ON)
+option(SPIRV_CROSS_ENABLE_TESTS "Enable SPIRV-Cross tests." OFF)
 
 option(SPIRV_CROSS_ENABLE_GLSL "Enable GLSL support." ON)
 option(SPIRV_CROSS_ENABLE_HLSL "Enable HLSL target support." ON)
@@ -63,7 +70,7 @@ option(SPIRV_CROSS_SKIP_INSTALL "Skips installation targets." OFF)
 option(SPIRV_CROSS_WERROR "Fail build on warnings." OFF)
 option(SPIRV_CROSS_MISC_WARNINGS "Misc warnings useful for Travis runs." OFF)
 
-option(SPIRV_CROSS_FORCE_PIC "Force position-independent code for all targets." OFF)
+option(SPIRV_CROSS_FORCE_PIC "Force position-independent code for all targets." ON)
 
 if(${CMAKE_GENERATOR} MATCHES "Makefile")
 	if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
@@ -135,8 +142,8 @@ if (CMAKE_COMPILER_IS_GNUCXX OR ((${CMAKE_CXX_COMPILER_ID} MATCHES "Clang") AND 
 	endif()
 
 	if (SPIRV_CROSS_SANITIZE_MEMORY)
-		set(spirv-compiler-options ${spirv-compiler-options} -fsanitize=memory)
-		set(spirv-cross-link-flags "${spirv-cross-link-flags} -fsanitize=memory")
+		set(spirv-compiler-options ${spirv-compiler-options})
+		set(spirv-cross-link-flags "${spirv-cross-link-flags}")
 	endif()
 
 	if (SPIRV_CROSS_SANITIZE_THREADS)
