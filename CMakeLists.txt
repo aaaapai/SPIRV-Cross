@@ -361,7 +361,7 @@ if (SPIRV_CROSS_SHARED)
 		install(FILES ${CMAKE_CURRENT_BINARY_DIR}/spirv-cross-c-shared.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 	endif()
 
-	spirv_cross_add_library(spirv-cross-c-shared spirv_cross_c_shared STATIC
+	spirv_cross_add_library(spirv-cross-c-shared spirv_cross_c_shared SHARED
 			${spirv-cross-core-sources}
 			${spirv-cross-c-sources})
 
