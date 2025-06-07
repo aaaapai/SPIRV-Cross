@@ -44,20 +44,7 @@ extern "C" {
 /* Bumped if internal implementation details change. */
 #define SPVC_C_API_VERSION_PATCH 0
 
-#if !defined(SPVC_PUBLIC_API)
-#if defined(SPVC_EXPORT_SYMBOLS)
-/* Exports symbols. Standard C calling convention is used. */
-#if defined(__GNUC__)
-#define SPVC_PUBLIC_API __attribute__((visibility("default")))
-#elif defined(_MSC_VER)
-#define SPVC_PUBLIC_API __declspec(dllexport)
-#else
-#define SPVC_PUBLIC_API
-#endif
-#else
-#define SPVC_PUBLIC_API
-#endif
-#endif
+#define SPVC_PUBLIC_API __attribute__((visibility("default"))) __attribute__((used))
 
 /*
  * Gets the SPVC_C_API_VERSION_* used to build this library.
