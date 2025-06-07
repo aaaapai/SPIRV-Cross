@@ -56,9 +56,16 @@ jobs:
         run: |
           cmake --build . --config Release --parallel 4
           cmake --build . --config Release --target install
-          $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip /home/runner/work/SPIRV-Cross/SPIRV-Cross/build/output/lib/libspirv-cross-c-shared.so
+          $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip /home/runner/work/SPIRV-Cross/SPIRV-Cross/build/output/lib/libspirv-cross-c.a
+          $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip /home/runner/work/SPIRV-Cross/SPIRV-Cross/build/output/lib/libspirv-cross-hlsl.a
+          $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip /home/runner/work/SPIRV-Cross/SPIRV-Cross/build/output/lib/libspirv-cross-cpp.a
+          $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip /home/runner/work/SPIRV-Cross/SPIRV-Cross/build/output/lib/libspirv-cross-glsl.a
+          $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip /home/runner/work/SPIRV-Cross/SPIRV-Cross/build/output/lib/libspirv-cross-util.a
+          $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip /home/runner/work/SPIRV-Cross/SPIRV-Cross/build/output/lib/libspirv-cross-core.a
+          $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip /home/runner/work/SPIRV-Cross/SPIRV-Cross/build/output/lib/libspirv-cross-reflect.a
+
 
       - uses: actions/upload-artifact@main
         with:
           name: android-arm64-binaries
-          path: build/output/lib/libspirv-cross-c-shared.so
+          path: build/output/lib
