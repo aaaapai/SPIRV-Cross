@@ -684,28 +684,6 @@ void CompilerMSL::build_implicit_builtins()
 				mark_implicit_builtin(StorageClassInput, BuiltInBaseInstance, var_id);
 			}
 
-			if (need_multiview)
-			{
-				// Multiview shaders are not allowed to write to gl_Layer, ostensibly because
-				// it is implicitly written from gl_ViewIndex, but we have to do that explicitly.
-				// Note that we can't just abuse gl_ViewIndex for this purpose: it's an input, but
-				// gl_Layer is an output in vertex-pipeline shaders.
-				uint32_t type_ptr_out_id = ir.increase_bound_by(2);
-				SPIRType uint_type_ptr_out = get_uint_type();
-				uint_type_ptr.op = OpTypePointer;
-				uint_type_ptr_out.pointer = true;
-				uint_type_ptr_out.pointer_depth++;
-				uint_type_ptr_out.parent_type = get_uint_type_id();
-				uint_type_ptr_out.storage = StorageClassOutput;
-				auto &ptr_out_type = set<SPIRType>(type_ptr_out_id, uint_type_ptr_out);
-				ptr_out_type.self = get_uint_type_id();
-				uint32_t var_id = type_ptr_out_id + 1;
-				set<SPIRVariable>(var_id, type_ptr_out_id, StorageClassOutput);
-				set_decoration(var_id, DecorationBuiltIn, BuiltInLayer);
-				builtin_layer_id = var_id;
-				mark_implicit_builtin(StorageClassOutput, BuiltInLayer, var_id);
-			}
-
 			if (need_multiview && !has_view_idx)
 			{
 				uint32_t var_id = ir.increase_bound_by(1);
@@ -716,6 +694,28 @@ void CompilerMSL::build_implicit_builtins()
 				builtin_view_idx_id = var_id;
 				mark_implicit_builtin(StorageClassInput, BuiltInViewIndex, var_id);
 			}
+		}
+
+		if (need_multiview)
+		{
+			// Multiview shaders are not allowed to write to gl_Layer, ostensibly because
+			// it is implicitly written from gl_ViewIndex, but we have to do that explicitly.
+			// Note that we can't just abuse gl_ViewIndex for this purpose: it's an input, but
+			// gl_Layer is an output in vertex-pipeline shaders.
+			uint32_t type_ptr_out_id = ir.increase_bound_by(2);
+			SPIRType uint_type_ptr_out = get_uint_type();
+			uint_type_ptr_out.op = OpTypePointer;
+			uint_type_ptr_out.pointer = true;
+			uint_type_ptr_out.pointer_depth++;
+			uint_type_ptr_out.parent_type = get_uint_type_id();
+			uint_type_ptr_out.storage = StorageClassOutput;
+			auto &ptr_out_type = set<SPIRType>(type_ptr_out_id, uint_type_ptr_out);
+			ptr_out_type.self = get_uint_type_id();
+			uint32_t var_id = type_ptr_out_id + 1;
+			set<SPIRVariable>(var_id, type_ptr_out_id, StorageClassOutput);
+			set_decoration(var_id, DecorationBuiltIn, BuiltInLayer);
+			builtin_layer_id = var_id;
+			mark_implicit_builtin(StorageClassOutput, BuiltInLayer, var_id);
 		}
 
 		if ((need_tesc_params && (msl_options.multi_patch_workgroup || !has_invocation_id || !has_primitive_id)) ||
@@ -1711,6 +1711,7 @@ string CompilerMSL::compile()
 	backend.array_is_value_type_in_buffer_blocks = false;
 	backend.support_pointer_to_pointer = true;
 	backend.implicit_c_integer_promotion_rules = true;
+	backend.supports_spec_constant_array_size = false;
 
 	capture_output_to_buffer = msl_options.capture_output_to_buffer;
 	is_rasterization_disabled = msl_options.disable_rasterization || capture_output_to_buffer;
@@ -9218,7 +9219,12 @@ bool CompilerMSL::prepare_access_chain_for_scalar_access(std::string &expr, cons
 	// and there is a risk of concurrent write access to other components,
 	// we must cast the access chain to a plain pointer to ensure we only access the exact scalars we expect.
 	// The MSL compiler refuses to allow component-level access for any non-packed vector types.
-	if (!is_packed && (storage == StorageClassStorageBuffer || storage == StorageClassWorkgroup))
+	// MSL refuses to take address or reference to vector component, even for packed types, so just force
+	// through the pointer cast. No much we can do sadly.
+	// For packed types, we could technically omit this if we know the reference does not have to turn into a pointer
+	// of some kind, but that requires external analysis passes to figure out, and
+	// this case is likely rare enough that we don't need to bother.
+	if (storage == StorageClassStorageBuffer || storage == StorageClassWorkgroup)
 	{
 		const char *addr_space = storage == StorageClassWorkgroup ? "threadgroup" : "device";
 		expr = join("((", addr_space, " ", type_to_glsl(type), "*)&", enclose_expression(expr), ")");
@@ -11244,8 +11250,11 @@ void CompilerMSL::emit_glsl_op(uint32_t result_type, uint32_t id, uint32_t eop, 
 	case GLSLstd450Sinh:
 		if (restype.basetype == SPIRType::Half)
 		{
+			auto ftype = restype;
+			ftype.basetype = SPIRType::Float;
+
 			// MSL does not have overload for half. Force-cast back to half.
-			auto expr = join("half(fast::sinh(", to_unpacked_expression(args[0]), "))");
+			auto expr = join(type_to_glsl(restype), "(fast::sinh(", type_to_glsl(ftype), "(", to_unpacked_expression(args[0]), ")))");
 			emit_op(result_type, id, expr, should_forward(args[0]));
 			inherit_expression_dependencies(id, args[0]);
 		}
@@ -11255,8 +11264,11 @@ void CompilerMSL::emit_glsl_op(uint32_t result_type, uint32_t id, uint32_t eop, 
 	case GLSLstd450Cosh:
 		if (restype.basetype == SPIRType::Half)
 		{
+			auto ftype = restype;
+			ftype.basetype = SPIRType::Float;
+
 			// MSL does not have overload for half. Force-cast back to half.
-			auto expr = join("half(fast::cosh(", to_unpacked_expression(args[0]), "))");
+			auto expr = join(type_to_glsl(restype), "(fast::cosh(", type_to_glsl(ftype), "(", to_unpacked_expression(args[0]), ")))");
 			emit_op(result_type, id, expr, should_forward(args[0]));
 			inherit_expression_dependencies(id, args[0]);
 		}
@@ -11266,8 +11278,11 @@ void CompilerMSL::emit_glsl_op(uint32_t result_type, uint32_t id, uint32_t eop, 
 	case GLSLstd450Tanh:
 		if (restype.basetype == SPIRType::Half)
 		{
+			auto ftype = restype;
+			ftype.basetype = SPIRType::Float;
+
 			// MSL does not have overload for half. Force-cast back to half.
-			auto expr = join("half(fast::tanh(", to_unpacked_expression(args[0]), "))");
+			auto expr = join(type_to_glsl(restype), "(fast::tanh(", type_to_glsl(ftype), "(", to_unpacked_expression(args[0]), ")))");
 			emit_op(result_type, id, expr, should_forward(args[0]));
 			inherit_expression_dependencies(id, args[0]);
 		}
@@ -11278,7 +11293,13 @@ void CompilerMSL::emit_glsl_op(uint32_t result_type, uint32_t id, uint32_t eop, 
 		if (restype.basetype == SPIRType::Half)
 		{
 			// MSL does not have overload for half. Force-cast back to half.
-			auto expr = join("half(fast::atan2(", to_unpacked_expression(args[0]), ", ", to_unpacked_expression(args[1]), "))");
+			auto ftype = restype;
+			ftype.basetype = SPIRType::Float;
+
+			auto expr = join(type_to_glsl(restype),
+			                 "(fast::atan2(",
+			                 type_to_glsl(ftype), "(", to_unpacked_expression(args[0]), "), ",
+			                 type_to_glsl(ftype), "(", to_unpacked_expression(args[1]), ")))");
 			emit_op(result_type, id, expr, should_forward(args[0]) && should_forward(args[1]));
 			inherit_expression_dependencies(id, args[0]);
 			inherit_expression_dependencies(id, args[1]);
@@ -11519,11 +11540,11 @@ void CompilerMSL::emit_glsl_op(uint32_t result_type, uint32_t id, uint32_t eop, 
 	{
 		auto &exp_type = expression_type(args[0]);
 		// MSL does not support scalar versions here.
-		// MSL has no implementation for normalize in the fast:: namespace for half2 and half3
+		// MSL has no implementation for normalize in the fast:: namespace for half
 		// Returns -1 or 1 for valid input, sign() does the job.
 		if (exp_type.vecsize == 1)
 			emit_unary_func_op(result_type, id, args[0], "sign");
-		else if (exp_type.vecsize <= 3 && exp_type.basetype == SPIRType::Half)
+		else if (exp_type.basetype == SPIRType::Half)
 			emit_unary_func_op(result_type, id, args[0], "normalize");
 		else
 			emit_unary_func_op(result_type, id, args[0], "fast::normalize");
