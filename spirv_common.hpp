@@ -27,8 +27,17 @@
 #ifndef SPV_ENABLE_UTILITY_CODE
 #define SPV_ENABLE_UTILITY_CODE
 #endif
-#include "spirv.hpp"
 
+// Pragmatic hack to avoid symbol conflicts when including both hpp11 and hpp headers in same translation unit.
+// This is an unfortunate SPIRV-Headers issue that we cannot easily deal with ourselves.
+#ifdef SPIRV_CROSS_SPV_HEADER_NAMESPACE_OVERRIDE
+#define spv SPIRV_CROSS_SPV_HEADER_NAMESPACE_OVERRIDE
+#define SPIRV_CROSS_SPV_HEADER_NAMESPACE SPIRV_CROSS_SPV_HEADER_NAMESPACE_OVERRIDE
+#else
+#define SPIRV_CROSS_SPV_HEADER_NAMESPACE spv
+#endif
+
+#include "spirv.hpp"
 #include "spirv_cross_containers.hpp"
 #include "spirv_cross_error_handling.hpp"
 #include <functional>
@@ -723,6 +732,10 @@ struct SPIREntryPoint
 	std::string name;
 	std::string orig_name;
 	std::unordered_map<uint32_t, uint32_t> fp_fast_math_defaults;
+	bool signed_zero_inf_nan_preserve_8 = false;
+	bool signed_zero_inf_nan_preserve_16 = false;
+	bool signed_zero_inf_nan_preserve_32 = false;
+	bool signed_zero_inf_nan_preserve_64 = false;
 	SmallVector<VariableID> interface_variables;
 
 	Bitset flags;
@@ -1851,7 +1864,8 @@ private:
 
 static inline bool type_is_floating_point(const SPIRType &type)
 {
-	return type.basetype == SPIRType::Half || type.basetype == SPIRType::Float || type.basetype == SPIRType::Double;
+	return type.basetype == SPIRType::Half || type.basetype == SPIRType::Float || type.basetype == SPIRType::Double ||
+	       type.basetype == SPIRType::BFloat16 || type.basetype == SPIRType::FloatE5M2 || type.basetype == SPIRType::FloatE4M3;
 }
 
 static inline bool type_is_integral(const SPIRType &type)
@@ -2036,4 +2050,7 @@ struct hash<SPIRV_CROSS_NAMESPACE::TypedID<type>>
 };
 } // namespace std
 
+#ifdef SPIRV_CROSS_SPV_HEADER_NAMESPACE_OVERRIDE
+#undef spv
+#endif
 #endif
