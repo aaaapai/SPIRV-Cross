@@ -570,6 +570,8 @@ def cross_compile_hlsl(shader, spirv, opt, force_no_external_validation, iterati
         hlsl_args.append('--hlsl-preserve-structured-buffers')
     if '.flip-vert-y.' in shader:
         hlsl_args.append('--flip-vert-y')
+    if '.user-semantic.' in shader:
+        hlsl_args.append('--hlsl-user-semantic')
 
     subprocess.check_call(hlsl_args)
 
@@ -927,6 +929,10 @@ def test_shader_msl(stats, shader, args, paths):
 
 def test_shader_hlsl(stats, shader, args, paths):
     joined_path = os.path.join(shader[0], shader[1])
+
+    if os.path.splitext(joined_path)[1] == '.hlsl':
+        return
+
     print('Testing HLSL shader:', joined_path)
     is_spirv = shader_is_spirv(shader[1])
     noopt = shader_is_noopt(shader[1])
