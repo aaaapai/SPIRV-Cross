@@ -54,7 +54,7 @@ report_and_abort(const std::string &msg)
 	fprintf(stderr, "There was a compiler error: %s\n", msg.c_str());
 #endif
 	fflush(stderr);
-	abort();
+	//abort();
 }
 
 #define SPIRV_CROSS_THROW(x) report_and_abort(x)
