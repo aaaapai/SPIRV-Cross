@@ -1489,8 +1489,6 @@ string CompilerGLSL::layout_for_member(const SPIRType &type, uint32_t index)
 
 const char *CompilerGLSL::format_to_glsl(ImageFormat format)
 {
-	if (options.es && is_desktop_only_format(format))
-		SPIRV_CROSS_THROW("Attempting to use image format not supported in ES profile.");
 
 	switch (format)
 	{
