@@ -14592,8 +14592,6 @@ void CompilerGLSL::emit_instruction(const Instruction &instruction)
 
 		if (!options.es && options.version < 430)
 			require_extension_internal("GL_ARB_texture_query_levels");
-		if (options.es)
-			SPIRV_CROSS_THROW("textureQueryLevels not supported in ES profile.");
 
 		auto expr = join("textureQueryLevels(", convert_separate_image_to_expression(ops[2]), ")");
 		auto &restype = get<SPIRType>(ops[0]);
