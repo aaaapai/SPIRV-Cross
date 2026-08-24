@@ -1181,11 +1181,11 @@ void CompilerGLSL::emit_header()
 				statement("#extension ", name, " : require");
 			}
 
-			if (!Supp::can_feature_be_implemented_without_extensions(feature))
+			/*if (!Supp::can_feature_be_implemented_without_extensions(feature))
 			{
 				statement("#else");
 				statement("#error No extensions available to emulate requested subgroup feature.");
-			}
+			}*/
 
 			statement("#endif");
 		}
