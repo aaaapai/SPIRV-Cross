@@ -17428,7 +17428,7 @@ string CompilerGLSL::type_to_glsl(const SPIRType &type, uint32_t id)
 
 	if (type.basetype == SPIRType::AtomicCounter)
 	{
-		else if (!options.es && options.version < 420)
+		if (!options.es && options.version < 420)
 			require_extension_internal("GL_ARB_shader_atomic_counters");
 	}
 
