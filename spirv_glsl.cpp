@@ -406,16 +406,12 @@ void CompilerGLSL::remap_pls_variables()
 			input_is_target = type.image.dim == DimSubpassData;
 		}
 
-		if (var.storage != StorageClassInput && !input_is_target)
-			SPIRV_CROSS_THROW("Can only use in and target variables for PLS inputs.");
 		var.remapped_variable = true;
 	}
 
 	for (auto &output : pls_outputs)
 	{
 		auto &var = get<SPIRVariable>(output.id);
-		if (var.storage != StorageClassOutput)
-			SPIRV_CROSS_THROW("Can only use out variables for PLS outputs.");
 		var.remapped_variable = true;
 	}
 }
@@ -447,15 +443,11 @@ void CompilerGLSL::find_static_extensions()
 	ir.for_each_typed_id<SPIRType>([&](uint32_t, const SPIRType &type) {
 		if (type.basetype == SPIRType::Double)
 		{
-			if (options.es)
-				SPIRV_CROSS_THROW("FP64 not supported in ES profile.");
 			if (!options.es && options.version < 400)
 				require_extension_internal("GL_ARB_gpu_shader_fp64");
 		}
 		else if (type.basetype == SPIRType::Int64 || type.basetype == SPIRType::UInt64)
 		{
-			if (options.es && options.version < 310) // GL_NV_gpu_shader5 fallback requires 310.
-				SPIRV_CROSS_THROW("64-bit integers not supported in ES profile before version 310.");
 			require_extension_internal("GL_ARB_gpu_shader_int64");
 		}
 		else if (type.basetype == SPIRType::Half)
@@ -484,8 +476,6 @@ void CompilerGLSL::find_static_extensions()
 	case ExecutionModelGLCompute:
 		if (!options.es && options.version < 430)
 			require_extension_internal("GL_ARB_compute_shader");
-		if (options.es && options.version < 310)
-			SPIRV_CROSS_THROW("At least ESSL 3.10 required for compute shaders.");
 		break;
 
 	case ExecutionModelGeometry:
@@ -516,11 +506,6 @@ void CompilerGLSL::find_static_extensions()
 	case ExecutionModelClosestHitKHR:
 	case ExecutionModelMissKHR:
 	case ExecutionModelCallableKHR:
-		// NV enums are aliases.
-		if (options.es || options.version < 460)
-			SPIRV_CROSS_THROW("Ray tracing shaders require non-es profile with version 460 or above.");
-		if (!options.vulkan_semantics)
-			SPIRV_CROSS_THROW("Ray tracing requires Vulkan semantics.");
 
 		// Need to figure out if we should target KHR or NV extension based on capabilities.
 		for (auto &cap : ir.declared_capabilities)
@@ -546,10 +531,6 @@ void CompilerGLSL::find_static_extensions()
 
 	case ExecutionModelMeshEXT:
 	case ExecutionModelTaskEXT:
-		if (options.es || options.version < 450)
-			SPIRV_CROSS_THROW("Mesh shaders require GLSL 450 or above.");
-		if (!options.vulkan_semantics)
-			SPIRV_CROSS_THROW("Mesh shaders require Vulkan semantics.");
 		require_extension_internal("GL_EXT_mesh_shader");
 		break;
 
@@ -559,17 +540,11 @@ void CompilerGLSL::find_static_extensions()
 
 	if (!pls_inputs.empty() || !pls_outputs.empty())
 	{
-		if (execution.model != ExecutionModelFragment)
-			SPIRV_CROSS_THROW("Can only use GL_EXT_shader_pixel_local_storage in fragment shaders.");
 		require_extension_internal("GL_EXT_shader_pixel_local_storage");
 	}
 
 	if (!inout_color_attachments.empty())
 	{
-		if (execution.model != ExecutionModelFragment)
-			SPIRV_CROSS_THROW("Can only use GL_EXT_shader_framebuffer_fetch in fragment shaders.");
-		if (options.vulkan_semantics)
-			SPIRV_CROSS_THROW("Cannot use EXT_shader_framebuffer_fetch in Vulkan GLSL.");
 
 		bool has_coherent = false;
 		bool has_incoherent = false;
@@ -593,17 +568,7 @@ void CompilerGLSL::find_static_extensions()
 
 	if (ir.addressing_model == AddressingModelPhysicalStorageBuffer64)
 	{
-		if (!options.vulkan_semantics)
-			SPIRV_CROSS_THROW("GL_EXT_buffer_reference is only supported in Vulkan GLSL.");
-		if (options.es && options.version < 320)
-			SPIRV_CROSS_THROW("GL_EXT_buffer_reference requires ESSL 320.");
-		else if (!options.es && options.version < 450)
-			SPIRV_CROSS_THROW("GL_EXT_buffer_reference requires GLSL 450.");
 		require_extension_internal("GL_EXT_buffer_reference2");
-	}
-	else if (ir.addressing_model != AddressingModelLogical)
-	{
-		SPIRV_CROSS_THROW("Only Logical and PhysicalStorageBuffer64 addressing models are supported.");
 	}
 
 	// Check for nonuniform qualifier and passthrough.
@@ -619,8 +584,6 @@ void CompilerGLSL::find_static_extensions()
 				require_extension_internal("GL_EXT_nonuniform_qualifier");
 			break;
 		case CapabilityRuntimeDescriptorArrayEXT:
-			if (!options.vulkan_semantics)
-				SPIRV_CROSS_THROW("GL_EXT_nonuniform_qualifier is only supported in Vulkan GLSL.");
 			require_extension_internal("GL_EXT_nonuniform_qualifier");
 			break;
 
@@ -632,67 +595,45 @@ void CompilerGLSL::find_static_extensions()
 			}
 			break;
 
-		case CapabilityVariablePointers:
-		case CapabilityVariablePointersStorageBuffer:
-			SPIRV_CROSS_THROW("VariablePointers capability is not supported in GLSL.");
-
 		case CapabilityMultiView:
 			if (options.vulkan_semantics)
 				require_extension_internal("GL_EXT_multiview");
 			else
 			{
 				require_extension_internal("GL_OVR_multiview2");
-				if (options.ovr_multiview_view_count == 0)
-					SPIRV_CROSS_THROW("ovr_multiview_view_count must be non-zero when using GL_OVR_multiview2.");
-				if (get_execution_model() != ExecutionModelVertex)
-					SPIRV_CROSS_THROW("OVR_multiview2 can only be used with Vertex shaders.");
 			}
 			break;
 
 		case CapabilityRayQueryKHR:
-			if (options.es || options.version < 460 || !options.vulkan_semantics)
-				SPIRV_CROSS_THROW("RayQuery requires Vulkan GLSL 460.");
 			require_extension_internal("GL_EXT_ray_query");
 			ray_tracing_is_khr = true;
 			break;
 
 		case CapabilityRayQueryPositionFetchKHR:
-			if (options.es || options.version < 460 || !options.vulkan_semantics)
-				SPIRV_CROSS_THROW("RayQuery Position Fetch requires Vulkan GLSL 460.");
 			require_extension_internal("GL_EXT_ray_tracing_position_fetch");
 			ray_tracing_is_khr = true;
 			break;
 
 		case CapabilityRayTracingPositionFetchKHR:
-			if (options.es || options.version < 460 || !options.vulkan_semantics)
-				SPIRV_CROSS_THROW("Ray Tracing Position Fetch requires Vulkan GLSL 460.");
 			require_extension_internal("GL_EXT_ray_tracing_position_fetch");
 			ray_tracing_is_khr = true;
 			break;
 
 		case CapabilityRayTraversalPrimitiveCullingKHR:
-			if (options.es || options.version < 460 || !options.vulkan_semantics)
-				SPIRV_CROSS_THROW("RayQuery requires Vulkan GLSL 460.");
 			require_extension_internal("GL_EXT_ray_flags_primitive_culling");
 			ray_tracing_is_khr = true;
 			break;
 
 		case CapabilityRayTracingClusterAccelerationStructureNV:
-			if (options.es || options.version < 460 || !options.vulkan_semantics)
-				SPIRV_CROSS_THROW("Cluster AS requires Vulkan GLSL 460.");
 			require_extension_internal("GL_NV_cluster_acceleration_structure");
 			ray_tracing_is_khr = true;
 			break;
 
 		case CapabilityTensorsARM:
-			if (options.es || options.version < 460 || !options.vulkan_semantics)
-				SPIRV_CROSS_THROW("Tensor requires Vulkan GLSL 460.");
 			require_extension_internal("GL_ARM_tensors");
 			break;
 
 		case CapabilityDescriptorHeapEXT:
-			if (!options.vulkan_semantics)
-				SPIRV_CROSS_THROW("DescriptorHeapEXT requires Vulkan semantics.");
 			require_extension_internal("GL_EXT_descriptor_heap");
 			require_extension_internal("GL_EXT_nonuniform_qualifier");
 			// We lose information about writeonly/readonly in SPIR-V. Just pre-empt this to avoid complicating code later.
@@ -706,10 +647,6 @@ void CompilerGLSL::find_static_extensions()
 
 	if (options.ovr_multiview_view_count)
 	{
-		if (options.vulkan_semantics)
-			SPIRV_CROSS_THROW("OVR_multiview2 cannot be used with Vulkan semantics.");
-		if (get_execution_model() != ExecutionModelVertex)
-			SPIRV_CROSS_THROW("OVR_multiview2 can only be used with Vertex shaders.");
 		require_extension_internal("GL_OVR_multiview2");
 	}
 
@@ -1015,8 +952,6 @@ void CompilerGLSL::emit_header()
 	{
 		if (options.es)
 		{
-			if (options.version < 310)
-				SPIRV_CROSS_THROW("At least ESSL 3.10 required for fragment shader interlock.");
 			require_extension_internal("GL_NV_fragment_shader_interlock");
 		}
 		else
@@ -1459,8 +1394,6 @@ string CompilerGLSL::to_interpolation_qualifiers(const Bitset &flags)
 	{
 		if (options.es)
 		{
-			if (options.version < 300)
-				SPIRV_CROSS_THROW("noperspective requires ESSL 300.");
 			require_extension_internal("GL_NV_shader_noperspective_interpolation");
 		}
 		else if (is_legacy_desktop())
@@ -1498,10 +1431,6 @@ string CompilerGLSL::to_interpolation_qualifiers(const Bitset &flags)
 
 	if (flags.get(DecorationPerVertexKHR))
 	{
-		if (options.es && options.version < 320)
-			SPIRV_CROSS_THROW("pervertexEXT requires ESSL 320.");
-		else if (!options.es && options.version < 450)
-			SPIRV_CROSS_THROW("pervertexEXT requires GLSL 450.");
 
 		if (barycentric_is_nv)
 		{
@@ -2277,8 +2206,6 @@ string CompilerGLSL::layout_for_variable(const SPIRVariable &var)
 		{
 			if (get_execution_model() != ExecutionModelGeometry)
 				SPIRV_CROSS_THROW("Geometry streams can only be used in geometry shaders.");
-			if (options.es)
-				SPIRV_CROSS_THROW("Multiple geometry streams not supported in ESSL.");
 			if (options.version < 400)
 				require_extension_internal("GL_ARB_transform_feedback3");
 			attr.push_back(join("stream = ", get_decoration(var.self, DecorationStream)));
@@ -2299,8 +2226,6 @@ string CompilerGLSL::layout_for_variable(const SPIRVariable &var)
 		{
 			if (get_execution_model() != ExecutionModelGeometry)
 				SPIRV_CROSS_THROW("Geometry streams can only be used in geometry shaders.");
-			if (options.es)
-				SPIRV_CROSS_THROW("Multiple geometry streams not supported in ESSL.");
 			if (options.version < 400)
 				require_extension_internal("GL_ARB_transform_feedback3");
 			attr.push_back(join("stream = ", get_decoration(var.self, DecorationStream)));
@@ -2325,8 +2250,6 @@ string CompilerGLSL::layout_for_variable(const SPIRVariable &var)
 			if (!options.es && options.version < 440)
 				require_extension_internal("GL_ARB_enhanced_layouts");
 		}
-		else if (options.es)
-			SPIRV_CROSS_THROW("GL_ARB_enhanced_layouts is not supported in ESSL.");
 	}
 
 	if (flags.get(DecorationIndex))
@@ -2418,9 +2341,6 @@ string CompilerGLSL::buffer_to_packing_standard(const SPIRType &type,
 	         support_enhanced_layouts &&
 	         buffer_is_packing_standard(type, BufferPackingStd430EnhancedLayout))
 	{
-		if (options.es && !options.vulkan_semantics)
-			SPIRV_CROSS_THROW("Push constant block cannot be expressed as neither std430 nor std140. ES-targets do "
-			                  "not support GL_ARB_enhanced_layouts.");
 		if (!options.es && !options.vulkan_semantics && options.version < 440)
 			require_extension_internal("GL_ARB_enhanced_layouts");
 
@@ -2433,9 +2353,6 @@ string CompilerGLSL::buffer_to_packing_standard(const SPIRType &type,
 		// Fallback time. We might be able to use the ARB_enhanced_layouts to deal with this difference,
 		// however, we can only use layout(offset) on the block itself, not any substructs, so the substructs better be the appropriate layout.
 		// Enhanced layouts seem to always work in Vulkan GLSL, so no need for extensions there.
-		if (options.es && !options.vulkan_semantics)
-			SPIRV_CROSS_THROW("Push constant block cannot be expressed as neither std430 nor std140. ES-targets do "
-			                  "not support GL_ARB_enhanced_layouts.");
 		if (!options.es && !options.vulkan_semantics && options.version < 440)
 			require_extension_internal("GL_ARB_enhanced_layouts");
 
@@ -3157,8 +3074,6 @@ void CompilerGLSL::emit_uniform(const SPIRVariable &var)
 	{
 		if (!options.es && options.version < 420)
 			require_extension_internal("GL_ARB_shader_image_load_store");
-		else if (options.es && options.version < 310)
-			SPIRV_CROSS_THROW("At least ESSL 3.10 required for shader image load store.");
 	}
 
 	add_resource_name(var.self);
@@ -3436,14 +3351,6 @@ string CompilerGLSL::remap_swizzle(const SPIRType &out_type, uint32_t input_comp
 void CompilerGLSL::emit_pls()
 {
 	auto &execution = get_entry_point();
-	if (execution.model != ExecutionModelFragment)
-		SPIRV_CROSS_THROW("Pixel local storage only supported in fragment shaders.");
-
-	if (!options.es)
-		SPIRV_CROSS_THROW("Pixel local storage only supported in OpenGL ES.");
-
-	if (options.version < 300)
-		SPIRV_CROSS_THROW("Pixel local storage only supported in ESSL 3.0 and above.");
 
 	if (!pls_inputs.empty())
 	{
@@ -3764,8 +3671,6 @@ void CompilerGLSL::emit_declared_builtin_block(StorageClass storage, ExecutionMo
 		{
 			if (get_execution_model() != ExecutionModelGeometry)
 				SPIRV_CROSS_THROW("Geometry streams can only be used in geometry shaders.");
-			if (options.es)
-				SPIRV_CROSS_THROW("Multiple geometry streams not supported in ESSL.");
 			if (options.version < 400)
 				require_extension_internal("GL_ARB_transform_feedback3");
 			attr.push_back(join("stream = ", geom_stream));
@@ -4207,11 +4112,6 @@ void CompilerGLSL::emit_resources()
 		    (var.storage == StorageClassInput || var.storage == StorageClassOutput) &&
 		    interface_variable_exists_in_entry_point(var.self) && !is_hidden)
 		{
-			if (options.es && get_execution_model() == ExecutionModelVertex && var.storage == StorageClassInput &&
-			    type.array.size() == 1)
-			{
-				SPIRV_CROSS_THROW("OpenGL ES doesn't support array input variables in vertex shader.");
-			}
 			emit_interface_block(var);
 			emitted = true;
 		}
@@ -6077,9 +5977,6 @@ string CompilerGLSL::constant_op_expression(const SPIRConstantOp &cop)
 	bool unary = false;
 	string op;
 
-	if (is_legacy() && is_unsigned_opcode(cop.opcode))
-		SPIRV_CROSS_THROW("Unsigned integers are not supported on legacy targets.");
-
 	// TODO: Find a clean way to reuse emit_instruction.
 	switch (cop.opcode)
 	{
@@ -6142,8 +6039,6 @@ string CompilerGLSL::constant_op_expression(const SPIRConstantOp &cop)
 
 	case OpSelect:
 	{
-		if (cop.arguments.size() < 3)
-			SPIRV_CROSS_THROW("Not enough arguments to OpSpecConstantOp.");
 
 		// This one is pretty annoying. It's triggered from
 		// uint(bool), int(bool) from spec constants.
@@ -15427,8 +15322,6 @@ void CompilerGLSL::emit_instruction(const Instruction &instruction)
 			{
 				if (!options.es && options.version < 430)
 					require_extension_internal("GL_ARB_shader_image_size");
-				else if (options.es && options.version < 310)
-					SPIRV_CROSS_THROW("At least ESSL 3.10 required for imageSize.");
 
 				// The size of an image is always constant.
 				expr = join("imageSize(", to_non_uniform_aware_expression(ops[2]), ")");
@@ -17535,8 +17428,6 @@ string CompilerGLSL::type_to_glsl(const SPIRType &type, uint32_t id)
 
 	if (type.basetype == SPIRType::AtomicCounter)
 	{
-		if (options.es && options.version < 310)
-			SPIRV_CROSS_THROW("At least ESSL 3.10 required for atomic counters.");
 		else if (!options.es && options.version < 420)
 			require_extension_internal("GL_ARB_shader_atomic_counters");
 	}
